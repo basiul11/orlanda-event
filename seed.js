@@ -8,7 +8,8 @@ const initialGuests = [
     { qrCode: "ORLANDA-VIP-777", guestName: "محمد عبد المنعم (VIP)" },
     { qrCode: "ORLANDA-11", guestName: "BASIL" },
     { qrCode: "ORLANDA-112", guestName: "اسر" },
-    { qrCode: "ORLANDA-1122", guestName:"يوسف" }
+    { qrCode: "ORLANDA-1122", guestName:"يوسف" },
+    { qrCode: "ASER", guestName:"اسرر" }
 ];
 
 const GuestSchema = new mongoose.Schema({
