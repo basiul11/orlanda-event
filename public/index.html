@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orlanda Event Check-in</title>
+    <style>
+        :root {
+            --primary-color: #b08d57; /* Elegant Gold/Bronze */
+            --primary-dark: #9c7b4b;
+            --light-gray: #f1e9e0; /* Warm Beige for borders */
+            --dark-gray: #3d3a37; /* Dark Brown/Charcoal for text */
+            --success-bg: #f0f9f4;
+            --success-text: #166534;
+            --error-bg: #fef3f2;
+            --error-text: #b42318;
+            --white: #ffffff;
+        }
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            text-align: center; 
+            background: linear-gradient(135deg, #fffaf5, #ffffff);
+            margin: 0; 
+            padding: 20px; 
+            color: var(--dark-gray);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--light-gray);
+        }
+        h1 { color: var(--primary-color); margin-bottom: 20px; font-size: 1.8em; }
+        #qr-reader-container {
+            position: relative;
+            width: 100%; 
+            margin: 25px auto; 
+            border-radius: 12px;
+            overflow: hidden; /* To clip the video stream to the border-radius */
+            border: 2px solid var(--light-gray);
+        }
+        #qr-reader {
+            width: 100%;
+            display: block; /* Ensure it fills the container */
+        }
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            box-shadow: 0 0 10px var(--primary-color);
+            animation: scan 2.5s infinite ease-in-out;
+            border-radius: 3px;
+            display: none; /* Hidden by default */
+        }
+        #result { margin-top: 20px; font-size: 1.15em; font-weight: bold; padding: 15px 20px; border-radius: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .success { background-color: var(--success-bg); color: var(--success-text); }
+        .error { background-color: var(--error-bg); color: var(--error-text); }
+        button { padding: 12px 25px; font-size: 1em; font-family: 'Cairo', sans-serif; cursor: pointer; background-color: var(--primary-color); color: var(--white); border: none; border-radius: 10px; margin-top: 15px; transition: background-color 0.2s; font-weight: 700; }
+        button:hover, button:focus { background-color: var(--primary-dark); outline: none; }
+        #manual-entry-toggle {
+            background: none;
+            border: none;
+            color: var(--dark-gray);
+            text-decoration: underline;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        #manual-entry { margin-top: 20px; display: none; }
+        #manual-code-input {
+            padding: 12px;
+            font-size: 1em;
+            width: calc(100% - 26px); /* Adjust for padding and border */
+            max-width: 300px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            transition: border-color 0.2s;
+        }
+        #manual-code-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(calc(100% - 3px)); }
+            100% { transform: translateY(0); }
+        }
+        #qr-reader-container.scanning .scan-line {
+            display: block;
+        }
+        .checked-in-container {
+            background: var(--white);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--light-gray);
+            margin-top: 25px;
+            text-align: right; /* Align list items to the right */
+        }
+        .checked-in-container h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+        #checked-in-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #checked-in-list li {
+            padding: 10px 5px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 1.1em;
+        }
+    </style>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+    <img src="https://via.placeholder.com/150x80.png?text=Orlanda+Hair+Care" alt="Orlanda Logo" style="margin-bottom: 15px; border-radius: 8px;">
+    <h1>نظام التحقق من دعوات Orlanda</h1>
+
+    <div id="qr-reader-container">
+        <div id="qr-reader"></div>
+        <div class="scan-line"></div>
+    </div>
+    <div id="result">الرجاء مسح الـ QR Code الخاص بالمدعو</div>
+
+    <!-- This button will be shown after a scan -->
+    <button id="scan-next-button" onclick="startScanner()" style="display: none; margin-top: 20px;">مسح الكود التالي</button>
+
+    <div id="manual-entry">
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;">
+        <h3>أو أدخل الكود يدويًا</h3>
+        <input type="text" id="manual-code-input" placeholder="مثال: ORLANDA-001-XYZ">
+        <br>
+        <button onclick="manualCheckIn()">تحقق من الكود</button>
+    </div>
+</div>
+
+<button id="manual-entry-toggle" onclick="toggleManualEntry()">ألا يعمل الماسح الضوئي؟ أدخل الكود يدويًا</button>
+
+<div class="checked-in-container">
+    <h2>الضيوف المسجلون (<span id="checked-in-count">0</span>)</h2>
+    <ul id="checked-in-list">
+        <!-- قائمة الضيوف المسجلين ستظهر هنا -->
+    </ul>
+</div>
+
+
+<script>
+    const resultDiv = document.getElementById('result');
+    const qrReaderContainer = document.getElementById('qr-reader-container');
+    const scanNextButton = document.getElementById('scan-next-button');
+    const manualEntryDiv = document.getElementById('manual-entry');
+    const manualEntryToggle = document.getElementById('manual-entry-toggle');
+    const manualInput = document.getElementById('manual-code-input');
+    const checkedInList = document.getElementById('checked-in-list');
+    const checkedInCountSpan = document.getElementById('checked-in-count');
+
+    manualInput.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') manualCheckIn();
+    });
+    const html5QrCode = new Html5Qrcode("qr-reader");
+
+    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+        checkIn(decodedText);
+    };
+
+    const config = { 
+        fps: 5, // Lowering FPS can help reduce rapid scans, though we are stopping it now.
+        qrbox: { width: 250, height: 250 }
+    };
+
+    function startScanner() {
+        // Reset UI
+        qrReaderContainer.style.display = 'block';
+        qrReaderContainer.classList.add('scanning');
+        scanNextButton.style.display = 'none';
+        resultDiv.innerHTML = 'الرجاء مسح الـ QR Code الخاص بالمدعو';
+        resultDiv.className = '';
+        manualEntryDiv.style.display = 'none';
+        manualEntryToggle.style.display = 'block';
+
+        // Start the scanner
+        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+            .catch(err => {
+                console.log("لم يتم العثور على كاميرا خلفية، نحاول بأي كاميرا متاحة.");
+                html5QrCode.start({ }, config, qrCodeSuccessCallback)
+                    .catch(err => {
+                        console.error("فشل بدء تشغيل الكاميرا:", err);
+                        resultDiv.innerHTML = "❌ لم يتمكن المتصفح من الوصول للكاميرا. يرجى التأكد من منح الإذن.";
+                        resultDiv.className = 'error';
+                    });
+            });
+    }
+
+    async function checkIn(code) {
+        // Stop scanning immediately to prevent re-scans
+        try {
+            await html5QrCode.stop();
+            console.log("QR Code scanning is stopped.");
+        } catch (err) {
+            // Ignore errors if the scanner wasn't running (e.g., manual entry)
+            console.error("فشل إيقاف الماسح الضوئي (يمكن تجاهل هذا الخطأ في الإدخال اليدوي):", err);
+        }
+
+        // UI changes after stopping
+        qrReaderContainer.style.display = 'none';
+        qrReaderContainer.classList.remove('scanning');
+        scanNextButton.style.display = 'block';
+
+        code = code.trim().toUpperCase();
+        resultDiv.innerHTML = 'جاري التحقق من الكود...';
+        resultDiv.className = '';
+
+        // *** بداية التعديل الرئيسي: التواصل مع السيرفر ***
+        // استبدل هذا الرابط بالرابط الذي حصلت عليه من Render
+        const SERVER_URL = 'https://orlanda-server.onrender.com'; // <--- ضع رابط Render هنا
+
+        const API_URL = `${SERVER_URL}/api/checkin`;
+
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qrCode: code }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) { // Status 200-299
+                resultDiv.innerHTML = `&#9989; تم التحقق بنجاح! مرحباً بك: ${data.guestName}`;
+                resultDiv.className = 'success';
+                updateCheckedInList(); // تحديث القائمة من السيرفر
+            } else { // Status 4xx, 5xx
+                resultDiv.innerHTML = `&#10060; خطأ: ${data.message}`; // عرض رسالة الخطأ من السيرفر
+                resultDiv.className = 'error';
+            }
+        } catch (error) {
+            console.error('Error communicating with server:', error);
+            resultDiv.innerHTML = '&#10060; خطأ في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.';
+            resultDiv.className = 'error';
+        }
+    }
+
+    function manualCheckIn() {
+        const code = document.getElementById('manual-code-input').value.trim().toUpperCase();
+        if (code) {
+            // For manual entry, we don't need to stop the scanner as it's not running
+            // but we should hide it and show the next scan button for a consistent UI
+            qrReaderContainer.style.display = 'none';
+            qrReaderContainer.classList.remove('scanning');
+            scanNextButton.style.display = 'block';
+            manualEntryToggle.style.display = 'none';
+            checkIn(code);
+        }
+    }
+    
+    function toggleManualEntry() {
+        manualEntryDiv.style.display = 'block';
+        manualEntryToggle.style.display = 'none';
+        manualInput.focus();
+    }
+
+    // تم تعديل هذه الدالة أيضاً لتعتمد على السيرفر
+    async function updateCheckedInList() {
+        // استبدل هذا الرابط بالرابط الذي حصلت عليه من Render
+        const SERVER_URL = 'https://orlanda-server.onrender.com'; // <--- ضع رابط Render هنا
+
+        const GUESTS_API_URL = `${SERVER_URL}/api/checked-in-guests`;
+
+        checkedInList.innerHTML = ''; // مسح القائمة الحالية
+        checkedInCountSpan.textContent = '...';
+
+        try {
+            const response = await fetch(GUESTS_API_URL);
+            const guests = await response.json(); // يفترض أن يرجع السيرفر مصفوفة من أسماء الضيوف
+
+            checkedInCountSpan.textContent = guests.length; // تحديث العدد
+
+            if (guests.length === 0) {
+                checkedInList.innerHTML = '<li>لم يتم تسجيل حضور أي ضيف بعد.</li>';
+                return;
+            }
+
+            guests.forEach(guestName => {
+                const listItem = document.createElement('li');
+                listItem.textContent = guestName;
+                checkedInList.appendChild(listItem);
+            });
+
+        } catch (error) {
+            console.error('Failed to fetch checked-in list:', error);
+            checkedInList.innerHTML = '<li>خطأ في تحميل القائمة.</li>';
+            checkedInCountSpan.textContent = '0';
+        }
+    }
+
+    // Start the scanner for the first time when the page loads
+    startScanner();
+    updateCheckedInList(); // عرض القائمة عند تحميل الصفحة
+</script>
+
+</body>
+</html>
