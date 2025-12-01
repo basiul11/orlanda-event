@@ -170,6 +170,9 @@
 
 
 <script>
+    // الرابط العام للخادم الذي تم نشره على Render
+    const SERVER_URL = 'https://orlanda-event.onrender.com';
+
     const resultDiv = document.getElementById('result');
     const qrReaderContainer = document.getElementById('qr-reader-container');
     const scanNextButton = document.getElementById('scan-next-button');
@@ -235,10 +238,7 @@
         resultDiv.innerHTML = 'جاري التحقق من الكود...';
         resultDiv.className = '';
 
-        // *** بداية التعديل الرئيسي: التواصل مع السيرفر ***
-        // استبدل هذا الرابط بالرابط الذي حصلت عليه من Render
-        const SERVER_URL = 'https://orlanda-server.onrender.com'; // <--- ضع رابط Render هنا
-
+        // *** التواصل مع الخادم ***
         const API_URL = `${SERVER_URL}/api/checkin`;
 
 
@@ -289,10 +289,7 @@
 
     // تم تعديل هذه الدالة أيضاً لتعتمد على السيرفر
     async function updateCheckedInList() {
-        // استبدل هذا الرابط بالرابط الذي حصلت عليه من Render
-        const SERVER_URL = 'https://orlanda-server.onrender.com'; // <--- ضع رابط Render هنا
-
-        const GUESTS_API_URL = `${SERVER_URL}/api/checked-in-guests`;
+        const GUESTS_API_URL = `${SERVER_URL}/api/checked-in-guests`; // استخدام الرابط العام
 
         checkedInList.innerHTML = ''; // مسح القائمة الحالية
         checkedInCountSpan.textContent = '...';
